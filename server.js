@@ -68,7 +68,7 @@ app.post("/submit-form", (req, res) => {
   res.json({ html }); // Return the HTML content as JSON
 });
 
-app.post("/download-json", (req, res) => {
+app.post("/download-json", (req, res) => {  
   const formData = req.body; // Get the form data from the request body
 
   // Convert the JSON object to a string

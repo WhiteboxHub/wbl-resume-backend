@@ -2,7 +2,7 @@
 FROM node:18
 
 # Set the working directory in the container
-WORKDIR /json-resume
+WORKDIR /wbl-resume-backend
 
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
@@ -46,13 +46,11 @@ RUN apt-get update && apt-get install -y \
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 8080
+EXPOSE 8001
 
 # Define environment variable for Tailwind CSS
 ENV NODE_ENV=development
 
-# Build Tailwind CSS
-RUN npm run build:css
 
 # Command to run the app
 CMD ["npm", "start"]

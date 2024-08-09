@@ -15,6 +15,7 @@ const mysql = require('mysql2');
 const app = express();
 const port = process.env.NODE_PUBLIC_API_URL ? new URL(process.env.NODE_PUBLIC_API_URL).port : 8001;
 
+app.use(express.json()); // Ensure this line is present
 
 app.use(cors());
 
@@ -84,43 +85,35 @@ app.post("/download-json", (req, res) => {
   res.send(buffer);
 });
 
+app.post("/generate-pdf", async (req, res) => {
+  const { html } = req.body; // Get HTML from request body
 
-// // Endpoint to generate PDF resume
-// app.post("/generate-pdf", async (req, res) => {
-//   const { html } = req.body; // Get HTML from request body
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.waitForTimeout(1000); // Wait for additional rendering time if needed
 
-//   //getting html here - debugging
-//   console.log(req.body);
+    const buffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+    });
 
-//   try {
-//     // Launch a new browser instance
-//     const browser = await puppeteer.launch({
-//       headless: true,
-//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-//     });
-//     const page = await browser.newPage();
-//     // Set the content of the page to the HTML content
-//     await page.setContent(html, { waitUntil: "networkidle0" }); // Wait until network is idle
-//     // Generate the PDF
-//     const buffer = await page.pdf({
-//       format: "A4",
-//       printBackground: true,
-//     });
+    await browser.close();
 
-//     // Close the browser
-//     await browser.close();
+    res.setHeader("Content-Disposition", "attachment; filename=resume.pdf");
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(buffer);
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    res.status(500).send("An error occurred while generating the PDF.");
+  }
+});
 
-//     // Send the PDF as a response
-//     //oldOne res.setHeader("Content-Disposition", "attachment; filename=resume.pdf");
-//     res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.send(buffer);
-//   } catch (err) {
-
-//     console.error("Error generating PDF:", err); // Log the error for debugging
-//     res.status(500).send("An error occurred while generating the PDF.");
-//   }
-// });
 
 
 

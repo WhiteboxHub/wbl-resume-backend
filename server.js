@@ -85,8 +85,38 @@ app.post("/download-json", (req, res) => {
   res.send(buffer);
 });
 
+// app.post("/generate-pdf", async (req, res) => {
+//   const { html } = req.body; // Get HTML from request body
+
+//   try {
+//     const browser = await puppeteer.launch({
+//       headless: true,
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+//     const page = await browser.newPage();
+
+//     await page.setContent(html, { waitUntil: 'networkidle0' });
+//     await page.waitForTimeout(1000); // Wait for additional rendering time if needed
+
+//     const buffer = await page.pdf({
+//       format: "A4",
+//       printBackground: true,
+//     });
+
+//     await browser.close();
+
+//     res.setHeader("Content-Disposition", "attachment; filename=resume.pdf");
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.send(buffer);
+//   } catch (err) {
+//     console.error("Error generating PDF:", err);
+//     res.status(500).send("An error occurred while generating the PDF.");
+//   }
+// });
+
+
 app.post("/generate-pdf", async (req, res) => {
-  const { html } = req.body; // Get HTML from request body
+  const { html } = req.body;
 
   try {
     const browser = await puppeteer.launch({
@@ -94,10 +124,8 @@ app.post("/generate-pdf", async (req, res) => {
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-    
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    await page.waitForTimeout(1000); // Wait for additional rendering time if needed
 
+    await page.setContent(html, { waitUntil: 'networkidle0' });
     const buffer = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -109,12 +137,10 @@ app.post("/generate-pdf", async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.send(buffer);
   } catch (err) {
-    console.error("Error generating PDF:", err);
-    res.status(500).send("An error occurred while generating the PDF.");
+    console.error("Error generating PDF:", err.message);
+    res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
   }
 });
-
-
 
 
 app.listen(port, () => {

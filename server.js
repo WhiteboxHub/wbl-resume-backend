@@ -13,8 +13,7 @@ const crypto = require("crypto");
 const axios = require("axios");
 const mysql = require("mysql2");
 const app = express();
-const PDFDocument = require('pdfkit');
-const blobStream = require('blob-stream');
+
 
 
 const port = process.env.NODE_PUBLIC_API_URL
@@ -111,9 +110,6 @@ app.post("/submit-form", (req, res) => {
 });
 
 
-
-
-
 app.post("/download-json", (req, res) => {
   const formData = req.body; // Get the form data from the request body
 
@@ -134,48 +130,6 @@ app.post("/download-json", (req, res) => {
   res.send(buffer);
 });
 
-
-
-
-
-// // Endpoint to generate PDF
-// app.post('/generate-pdf', async (req, res) => {
-//   const { html } = req.body;
-
-//   if (!html) {
-//       return res.status(400).json({ error: 'HTML content is required' });
-//   }
-
-//   try {
-//       // Launch Puppeteer and create a new page
-//       const browser = await puppeteer.launch({
-//         headless: true,
-//         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-//       });
-//       const page = await browser.newPage();
-
-//       // Set the content of the page to the HTML from the request
-//       await page.setContent(html, { waitUntil: 'networkidle0' });
-//       // await page.waitForTimeout(1000)
-
-//       // Generate PDF with options for better rendering
-//       const pdfBuffer = await page.pdf({
-//           format: 'A4',
-//           printBackground: true,
-//       });
-
-//       // Close the browser
-//       await browser.close();
-
-//       // Set headers and send the PDF
-//       res.setHeader("Content-Type", "application/pdf");
-//       res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
-//       res.send(pdfBuffer);
-//   } catch (error) {
-//       console.error('Error generating PDF:', error);
-//       res.status(500).json({ error: 'Failed to generate PDF' });
-//   }
-// });
 
 app.post("/generate-pdf", async (req, res) => {
   const { html } = req.body;
@@ -203,47 +157,6 @@ app.post("/generate-pdf", async (req, res) => {
     res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
   }
 });
-
-
-
-
-// // Endpoint to generate PDF
-// app.post('/generate-pdf', async (req, res) => {
-//   const html = req.body;
-
-//   if (!html) {
-//       return res.status(400).json({ error: 'HTML content is required' });
-//   }
-
-//   try {
-//     // Create a new PDF document
-//     const doc = new PDFDocument();
-
-//     // Create a stream to capture the PDF data
-//     const stream = doc.pipe(blobStream());
-
-//     // Add content to the PDF
-//     doc.text(html); // Simple text content, for HTML rendering, use a library like 'pdfkit-html' or similar
-
-//     // Finalize the PDF and end the stream
-//     doc.end();
-
-//     // Wait for the stream to finish
-//     stream.on('finish', () => {
-//       // Set headers and send the PDF
-//       res.setHeader("Content-Type", "application/pdf");
-//       res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
-//       res.send(stream.toBlobURL('application/pdf'));
-//     });
-
-//   } catch (error) {
-//     console.error('Error generating PDF:', error);
-//     res.status(500).json({ error: 'Failed to generate PDF' });
-//   }
-// });
-
-
-
 
 //fetch resume based upon the guid/public id
 app.get("/resume/:id", (req, res) => {
@@ -292,40 +205,6 @@ app.get("/resume/:id", (req, res) => {
   });
 });
 
-
-
-
-
-
-
-
-
-
-
-// app.post('/validate-resume', (req, res) => {
-//   const userId = req.user.id;  // Assuming user ID is stored in req.user after authentication
-
-//   const query = 'SELECT * FROM candidate WHERE candidate_id = ?';
-//   connection.query(query, [userId], (err, results) => {
-//       if (err) return res.status(500).json({ error: 'Database query failed' });
-
-//       if (results.length > 0) {
-//           // User found, proceed to check if they have a resume
-//           const resumeQuery = 'SELECT * FROM candidate_resume WHERE candidate_id = ?';
-//           connection.query(resumeQuery, [userId], (err, resumeResults) => {
-//               if (err) return res.status(500).json({ error: 'Database query failed' });
-
-//               if (resumeResults.length > 0) {
-//                   res.json({ valid: true, resumeExists: true });
-//               } else {
-//                   res.json({ valid: true, resumeExists: false });
-//               }
-//           });
-//       } else {
-//           res.status(404).json({ valid: false, message: 'User not found' });
-//       }
-//   });
-// });
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

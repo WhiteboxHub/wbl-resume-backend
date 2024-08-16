@@ -18,14 +18,16 @@ require("dotenv").config();
 const port = process.env.NODE_PUBLIC_API_URL
   ? new URL(process.env.NODE_PUBLIC_API_URL).port
   : 8001;
-app.use(express.json()); // Ensure this line is present
+// Ensure this line is present
+app.use(express.json()); 
 app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "hbs");
-app.set("views", path.join(__dirname, "src")); // Set directory for template files
+// Set directory for template files
+app.set("views", path.join(__dirname, "src")); 
 
 // Database connection setup using environment variables
 const connection = mysql.createConnection({
@@ -104,16 +106,13 @@ app.post("/submit-form", (req, res) => {
   });
 
   const html = renderResume(formData);
-  //console.log(typeof html, html); // Log HTML for debugging
-  res.json({ html }); // Return the HTML content as JSON
+ // Return the HTML content as JSON
+  res.json({ html }); 
 });
 
-
-
-
-
+// Endpoint to download the json file from the data
 app.post("/download-json", (req, res) => {
-  const formData = req.body; // Get the form data from the request body
+  const formData = req.body; 
 
   // Convert the JSON object to a string
   const jsonStr = JSON.stringify(formData, null, 2);
@@ -132,7 +131,7 @@ app.post("/download-json", (req, res) => {
   res.send(buffer);
 });
 
-
+//Endpoint to generate the pdf from html
 app.post("/generate-pdf", async (req, res) => {
   const { html } = req.body;
 
@@ -160,7 +159,7 @@ app.post("/generate-pdf", async (req, res) => {
   }
 });
 
-
+// get the resume html in the UI and it's will only for readability
 app.get("/resume/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
@@ -191,8 +190,6 @@ app.get("/resume/:id", (req, res) => {
     }
   });
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

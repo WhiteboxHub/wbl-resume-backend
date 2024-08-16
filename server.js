@@ -1,18 +1,17 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
-const puppeteer = require("puppeteer");
 const hbs = require("hbs");
 const handlebars = require("handlebars");
 const handlebarsWax = require("handlebars-wax");
+const puppeteer = require("puppeteer");
 const moment = require("moment");
 const fs = require("fs");
 const cors = require("cors");
-require("dotenv").config();
 const crypto = require("crypto");
-const axios = require("axios");
 const mysql = require("mysql2");
 const app = express();
+require("dotenv").config();
 
 
 
@@ -110,6 +109,9 @@ app.post("/submit-form", (req, res) => {
 });
 
 
+
+
+
 app.post("/download-json", (req, res) => {
   const formData = req.body; // Get the form data from the request body
 
@@ -158,43 +160,28 @@ app.post("/generate-pdf", async (req, res) => {
   }
 });
 
-//fetch resume based upon the guid/public id
+
 app.get("/resume/:id", (req, res) => {
   const resumeId = req.params.id;
-  const query =
-    "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
-  connection.query(query, [resumeId], async (err, results) => {
+  const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
+
+  connection.query(query, [resumeId], (err, results) => {
     if (err) {
       console.error("Error retrieving data:", err);
       res.status(500).json({ message: "Error retrieving data", error: err });
       return;
     }
+
     if (results.length > 0) {
       const retrievedData = results[0].candidate_json;
 
       try {
         const parsedData = JSON.parse(retrievedData);
-
         const html = renderResume(parsedData);
 
-        try {
-          const pdfResponse = await axios.post(
-            "http://localhost:8001/generate-pdf",
-            { html },
-            {
-              responseType: "arraybuffer",
-              headers: {
-                Accept: "application/pdf",
-              },
-            }
-          );
-
-          res.setHeader("Content-Type", "application/pdf");
-          res.send(pdfResponse.data);
-        } catch (pdfErr) {
-          console.error("Error generating PDF:", pdfErr);
-          res.status(500).send("An error occurred while generating the PDF.");
-        }
+        // Serve the HTML directly without generating a PDF
+        res.setHeader("Content-Type", "text/html");
+        res.send(html);
       } catch (parseErr) {
         console.error("Error parsing JSON:", parseErr);
         res.status(500).send("An error occurred while parsing JSON data.");
@@ -204,6 +191,7 @@ app.get("/resume/:id", (req, res) => {
     }
   });
 });
+
 
 
 app.listen(port, () => {

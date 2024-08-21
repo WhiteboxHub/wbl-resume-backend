@@ -48,9 +48,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 8001
 
-# Define environment variable for Tailwind CSS
-ENV NODE_ENV=development
-
-
 # Command to run the app
 CMD ["npm", "start"]

@@ -121,7 +121,7 @@ function generateGuid() {
 
 
 
-app.post('/submit-form', (req, res) => {
+app.post('/api/resume/submit-form', (req, res) => {
   const formData = req.body;
 
   // Retrieve the token from the Authorization header
@@ -184,7 +184,7 @@ app.post('/submit-form', (req, res) => {
 
 
 // Endpoint to download the json file from the data
-app.post("/download-json", (req, res) => {
+app.post("/api/resume/download-json", (req, res) => {
   const formData = req.body; 
 
   // Convert the JSON object to a string
@@ -205,7 +205,7 @@ app.post("/download-json", (req, res) => {
 });
 
 //Endpoint to generate the pdf from html
-app.post("/generate-pdf", async (req, res) => {
+app.post("/api/resume/generate-pdf", async (req, res) => {
   const { html } = req.body;
 
   try {

@@ -20,6 +20,7 @@ const port = process.env.NODE_PUBLIC_API_URL
   : 8001;
 // Ensure this line is present
 app.use(express.json()); 
+
 app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -87,7 +88,7 @@ function generateGuid() {
 }
 
 // Endpoint to submit form data and render HTML
-app.post("/submit-form", (req, res) => {
+app.post("/api/resume/submit-form", (req, res) => {
   const formData = req.body;
   console.log(formData);
 
@@ -111,7 +112,7 @@ app.post("/submit-form", (req, res) => {
 });
 
 // Endpoint to download the json file from the data
-app.post("/download-json", (req, res) => {
+app.post("/api/resume/download-json", (req, res) => {
   const formData = req.body; 
 
   // Convert the JSON object to a string
@@ -132,7 +133,7 @@ app.post("/download-json", (req, res) => {
 });
 
 //Endpoint to generate the pdf from html
-app.post("/generate-pdf", async (req, res) => {
+app.post("/api/resume/generate-pdf", async (req, res) => {
   const { html } = req.body;
 
   try {

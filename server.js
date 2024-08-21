@@ -11,6 +11,8 @@ const cors = require("cors");
 const crypto = require("crypto");
 const mysql = require("mysql2");
 const app = express();
+
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 
 
@@ -28,6 +30,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "hbs");
 // Set directory for template files
 app.set("views", path.join(__dirname, "src")); 
+
+const secretKey =  process.env.SECRET_KEY;
 
 // Database connection setup using environment variables
 const connection = mysql.createConnection({
@@ -86,29 +90,98 @@ function generateGuid() {
   return crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 7);
 }
 
+
+
+
 // Endpoint to submit form data and render HTML
-app.post("/submit-form", (req, res) => {
+// sahas check
+// app.post("/submit-form", (req, res) => {
+//   const formData = req.body;
+//   // console.log(formData);
+
+//   const publicId = generateGuid();
+//   const candidateJson = JSON.stringify(formData);
+
+//   // Insert data into the database
+//   const query =
+//     "INSERT INTO candidate_resume (public_id, candidate_id, candidate_json) VALUES (?, ?, ?)";
+//   connection.query(query, [publicId, null, candidateJson], (error, results) => {
+//     if (error) {
+//       console.error("Error inserting data:", error);
+//       return res.status(500).json({ error: "Database error" });
+//     }
+//     console.log("Data inserted with ID:", results.insertId);
+//   });
+
+//   const html = renderResume(formData);
+//  // Return the HTML content as JSON
+//   res.json({ html }); 
+// });
+
+
+
+
+app.post('/submit-form', (req, res) => {
   const formData = req.body;
-  console.log(formData);
 
-  const publicId = generateGuid();
-  const candidateJson = JSON.stringify(formData);
+  // Retrieve the token from the Authorization header
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
 
-  // Insert data into the database
-  const query =
-    "INSERT INTO candidate_resume (public_id, candidate_id, candidate_json) VALUES (?, ?, ?)";
-  connection.query(query, [publicId, null, candidateJson], (error, results) => {
-    if (error) {
-      console.error("Error inserting data:", error);
-      return res.status(500).json({ error: "Database error" });
+  if (!token) {
+    console.log('No token provided');
+    return res.status(400).json({ error: 'No token provided' });
+  }
+
+  // Verify and decode the token
+  try {
+     
+     
+    const decodedToken = jwt.verify(token, secretKey);
+
+    const candidateId = decodedToken.candidateid; // Extract candidateId from the decoded token
+
+    if (!candidateId) {
+      return res.status(400).json({ error: 'User not logged in' });
     }
-    console.log("Data inserted with ID:", results.insertId);
-  });
 
-  const html = renderResume(formData);
- // Return the HTML content as JSON
-  res.json({ html }); 
+    const publicId = generateGuid(); // Generate a new GUID if needed
+    const candidateJson = JSON.stringify(formData);
+
+    // Update existing candidate_resume entry with the new resume details
+    const query = 'UPDATE candidate_resume SET candidate_json = ?, public_id = ? WHERE candidate_id = ?';
+    connection.query(query, [candidateJson, publicId, candidateId], (error, results) => {
+      if (error) {
+        console.error('Error updating data:', error);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ error: 'Candidate not found' });
+      }
+
+      console.log('Data updated for candidate_id:', candidateId);
+
+      // Render the resume and return the HTML content as JSON
+      const html = renderResume(formData);
+      res.json({ html });
+    });
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 });
+
+
+
+
+
+
+
+
+
+
+
 
 // Endpoint to download the json file from the data
 app.post("/download-json", (req, res) => {

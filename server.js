@@ -240,7 +240,7 @@ app.post("/api/resume/generate-pdf", async (req, res) => {
 });
 
 // get the resume html in the UI and it's will only for readability
-app.get("/resume/:id", (req, res) => {
+app.get("api/resume/resume/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 

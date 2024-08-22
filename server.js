@@ -11,6 +11,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const mysql = require("mysql2");
 const app = express();
+const pdf = require('html-pdf');
 
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
@@ -23,7 +24,21 @@ const port = process.env.NODE_PUBLIC_API_URL
 // Ensure this line is present
 app.use(express.json()); 
 
-app.use(cors());
+const corsOptions = {
+  origin: [
+    // Adjust these origins based on your frontend deployment
+    "http://localhost:3000",
+    "https://whitebox-learning.com",
+    "https://www.whitebox-learning.com",
+    // Consider using wildcards if your frontend URL can vary
+    "*.whitebox-learning.com"
+  ],
+  credentials: true, // Allow cookies, authorization headers, etc.
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+};
+
+app.use(cors(corsOptions));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -94,9 +109,9 @@ function generateGuid() {
 
 
 
-// Endpoint to submit form data and render HTML
-// sahas check
-// app.post("/submit-form", (req, res) => {
+// // Endpoint to submit form data and render HTML
+// // sahas check
+// app.post("/api/resume/submit-form", (req, res) => {
 //   const formData = req.body;
 //   // console.log(formData);
 
@@ -135,8 +150,7 @@ app.post('/api/resume/submit-form', (req, res) => {
   }
 
   // Verify and decode the token
-  try {
-     
+  try { 
      
     const decodedToken = jwt.verify(token, secretKey);
 
@@ -174,16 +188,6 @@ app.post('/api/resume/submit-form', (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
-
-
 // Endpoint to download the json file from the data
 app.post("/api/resume/download-json", (req, res) => {
   const formData = req.body; 
@@ -206,6 +210,8 @@ app.post("/api/resume/download-json", (req, res) => {
 });
 
 //Endpoint to generate the pdf from html
+
+
 app.post("/api/resume/generate-pdf", async (req, res) => {
   const { html } = req.body;
 

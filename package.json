@@ -33,6 +33,7 @@
     "handlebars": "^4.7.8",
     "handlebars-wax": "^6.1.0",
     "hbs": "^4.2.0",
+    "html-pdf": "^3.0.1",
     "json-resume": "file:",
     "jsonresume-theme-macchiato": "^1.1.0",
     "jsonwebtoken": "^9.0.2",

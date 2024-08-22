@@ -136,7 +136,6 @@ app.post('/submit-form', (req, res) => {
   // Verify and decode the token
   try {
      
-     
     const decodedToken = jwt.verify(token, secretKey);
 
     const candidateId = decodedToken.candidateid; // Extract candidateId from the decoded token
@@ -204,6 +203,8 @@ app.post("/download-json", (req, res) => {
   res.send(buffer);
 });
 
+
+
 //Endpoint to generate the pdf from html
 app.post("/generate-pdf", async (req, res) => {
   const { html } = req.body;
@@ -223,7 +224,7 @@ app.post("/generate-pdf", async (req, res) => {
 
     await browser.close();
 
-    res.setHeader("Content-Disposition", "attachment; filename=resume.pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="MyResume.pdf"');
     res.setHeader("Content-Type", "application/pdf");
     res.send(buffer);
   } catch (err) {
@@ -231,6 +232,9 @@ app.post("/generate-pdf", async (req, res) => {
     res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
   }
 });
+
+
+
 
 // get the resume html in the UI and it's will only for readability
 app.get("/resume/:id", (req, res) => {

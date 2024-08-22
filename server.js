@@ -11,8 +11,6 @@ const cors = require("cors");
 const crypto = require("crypto");
 const mysql = require("mysql2");
 const app = express();
-const pdf = require('html-pdf');
-
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
 
@@ -227,6 +225,7 @@ app.post("/api/resume/generate-pdf", async (req, res) => {
       format: "A4",
       printBackground: true,
     });
+    console.log("PDF buffer size:", buffer.length);
 
     await browser.close();
 
@@ -238,6 +237,7 @@ app.post("/api/resume/generate-pdf", async (req, res) => {
     res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
   }
 });
+
 
 // get the resume html in the UI and it's will only for readability
 app.get("api/resume/resume/:id", (req, res) => {

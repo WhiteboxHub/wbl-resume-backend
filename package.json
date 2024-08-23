@@ -36,6 +36,7 @@
     "handlebars-wax": "^6.1.0",
     "hbs": "^4.2.0",
     "html-pdf-node": "^1.0.8",
+    "html2pdf.js": "^0.10.2",
     "json-resume": "file:",
     "jsonresume-theme-macchiato": "^1.1.0",
     "jsonwebtoken": "^9.0.2",

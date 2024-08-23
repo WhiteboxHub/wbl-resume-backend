@@ -95,6 +95,7 @@ function generateGuid() {
 
 // Endpoint to submit form data and render HTML
 // sahas check
+
 // app.post("/submit-form", (req, res) => {
 //   const formData = req.body;
 //   // console.log(formData);
@@ -121,7 +122,7 @@ function generateGuid() {
 
 
 
-app.post('/submit-form', (req, res) => {
+app.post('/api/resume/submit-form', (req, res) => {
   const formData = req.body;
 
   // Retrieve the token from the Authorization header
@@ -183,7 +184,7 @@ app.post('/submit-form', (req, res) => {
 
 
 // Endpoint to download the json file from the data
-app.post("/download-json", (req, res) => {
+app.post("/api/resume/download-json", (req, res) => {
   const formData = req.body; 
 
   // Convert the JSON object to a string
@@ -206,7 +207,7 @@ app.post("/download-json", (req, res) => {
 
 
 //Endpoint to generate the pdf from html
-app.post("/generate-pdf", async (req, res) => {
+app.post("/api/resume/generate-pdf", async (req, res) => {
   const { html } = req.body;
 
   try {
@@ -217,14 +218,14 @@ app.post("/generate-pdf", async (req, res) => {
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
+
     const buffer = await page.pdf({
-      format: "A4",
+      format: 'A4',
       printBackground: true,
     });
-
     await browser.close();
 
-    res.setHeader("Content-Disposition", 'inline; filename="MyResume.pdf"');
+    res.setHeader("Content-Disposition", 'attachment ; filename="MyResume.pdf"');
     res.setHeader("Content-Type", "application/pdf");
     res.send(buffer);
   } catch (err) {
@@ -237,7 +238,7 @@ app.post("/generate-pdf", async (req, res) => {
 
 
 // get the resume html in the UI and it's will only for readability
-app.get("/resume/:id", (req, res) => {
+app.get("api/resume/resume/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 

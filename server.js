@@ -1,18 +1,17 @@
-const express = require("express");
+const express= require("express") ;
 const bodyParser = require("body-parser");
 const path = require("path");
-const hbs = require("hbs");
-const handlebars = require("handlebars");
-const handlebarsWax = require("handlebars-wax");
 const puppeteer = require("puppeteer");
-const moment = require("moment");
 const fs = require("fs");
 const cors = require("cors");
 const crypto = require("crypto");
 const mysql = require("mysql2");
 const app = express();
 const jwt = require('jsonwebtoken');
+const { type } = require("os");
+const theme = require('jsonresume-theme-macchiato');
 require("dotenv").config();
+
 
 
 
@@ -40,10 +39,10 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
-app.set("view engine", "hbs");
-// Set directory for template files
-app.set("views", path.join(__dirname, "src")); 
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 
 const secretKey =  process.env.SECRET_KEY;
 
@@ -64,80 +63,13 @@ connection.connect((err) => {
   console.log("Connected to the database as ID:", connection.threadId);
 });
 
-// Register Handlebars helpers
-handlebars.registerHelper({
-  removeProtocol: (url) => url.replace(/.*?:\/\//g, ""),
-  concat: (...args) => args.filter((arg) => typeof arg !== "object").join(""),
-  formatAddress: (...args) =>
-    args.filter((arg) => typeof arg !== "object").join(" "),
-  formatDate: (date) => moment(date).format("MM/YYYY"),
-  lowercase: (s) => s.toLowerCase(),
-  eq: (a, b) => a === b,
-});
-
-// Initialize HandlebarsWax with Handlebars
-const Handlebars = handlebarsWax(handlebars);
-
-// Register partials
-Handlebars.partials(path.join(__dirname, "src", "partials", "", "*.hbs"));
-
-// Function to render resume using Handlebars
-function renderResume(formData) {
-  const css = fs.readFileSync(
-    path.join(__dirname, "src", "style.css"),
-    "utf-8"
-  );
-  const resumeTemplate = fs.readFileSync(
-    path.join(__dirname, "src", "resume.hbs"),
-    "utf-8"
-  );
-  const template = Handlebars.compile(resumeTemplate);
-  const html = template({
-    style: `<style>${css}</style>`,
-    resume: formData,
-  });
-  return html;
-}
-
-// Function to generate a unique 7-digit alphanumeric GUID
 function generateGuid() {
-  return crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 7);
+  return crypto.randomBytes(4).toString("hex").toLowerCase().slice(0, 7);
 }
 
-
-
-
-// // Endpoint to submit form data and render HTML
-// // sahas check
-// app.post("/api/resume/submit-form", (req, res) => {
-//   const formData = req.body;
-//   // console.log(formData);
-
-//   const publicId = generateGuid();
-//   const candidateJson = JSON.stringify(formData);
-
-//   // Insert data into the database
-//   const query =
-//     "INSERT INTO candidate_resume (public_id, candidate_id, candidate_json) VALUES (?, ?, ?)";
-//   connection.query(query, [publicId, null, candidateJson], (error, results) => {
-//     if (error) {
-//       console.error("Error inserting data:", error);
-//       return res.status(500).json({ error: "Database error" });
-//     }
-//     console.log("Data inserted with ID:", results.insertId);
-//   });
-
-//   const html = renderResume(formData);
-//  // Return the HTML content as JSON
-//   res.json({ html }); 
-// });
-
-
-
-
-app.post('/api/resume/submit-form', (req, res) => {
-  const formData = req.body;
-
+app.post('/api/resume/download-pdf', async (req, res) => {
+  const { html  } = req.body;
+  const{ resumeJson } = req.body;
   // Retrieve the token from the Authorization header
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -148,36 +80,41 @@ app.post('/api/resume/submit-form', (req, res) => {
   }
 
   // Verify and decode the token
-  try { 
-     
+  try {
     const decodedToken = jwt.verify(token, secretKey);
-
-    const candidateId = decodedToken.candidateid; // Extract candidateId from the decoded token
+    const candidateId = decodedToken.candidateid;
 
     if (!candidateId) {
       return res.status(400).json({ error: 'User not logged in' });
     }
 
     const publicId = generateGuid(); // Generate a new GUID if needed
-    const candidateJson = JSON.stringify(formData);
 
     // Update existing candidate_resume entry with the new resume details
     const query = 'UPDATE candidate_resume SET candidate_json = ?, public_id = ? WHERE candidate_id = ?';
-    connection.query(query, [candidateJson, publicId, candidateId], (error, results) => {
+    connection.query(query, [resumeJson, publicId, candidateId], (error, results) => {
       if (error) {
         console.error('Error updating data:', error);
         return res.status(500).json({ error: 'Database error' });
       }
 
-      if (results.affectedRows === 0) {
+      if (results.affectedRows === 0) { 
         return res.status(404).json({ error: 'Candidate not found' });
       }
 
       console.log('Data updated for candidate_id:', candidateId);
 
-      // Render the resume and return the HTML content as JSON
-      const html = renderResume(formData);
-      res.json({ html });
+      // Generate PDF from HTML
+      generatePdf(html).then(buffer => {
+        const filename = `resume_${publicId}.pdf`;
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-Type", "application/pdf");
+        res.end(buffer);
+      }).catch(err => {
+        console.error("Error generating PDF:", err.message);
+        res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
+      });
     });
   } catch (error) {
     console.error('Token verification failed:', error);
@@ -185,65 +122,37 @@ app.post('/api/resume/submit-form', (req, res) => {
   }
 });
 
-
-// Endpoint to download the json file from the data
-app.post("/api/resume/download-json", (req, res) => {
-  const formData = req.body; 
-
-  // Convert the JSON object to a string
-  const jsonStr = JSON.stringify(formData, null, 2);
-
-  // Create a Buffer from the JSON string
-  const buffer = Buffer.from(jsonStr, "utf-8");
-
-  // Set the response headers to trigger a file download
-  res.setHeader(
-    "Content-Disposition",
-    'attachment; filename="resume-data.json"'
-  );
-  res.setHeader("Content-Type", "application/json");
-
-  // Send the buffer as the file content
-  res.send(buffer);
-});
-
-
-
-//Endpoint to generate the pdf from html
-
-
-app.post("/api/resume/generate-pdf", async (req, res) => {
-  const { html } = req.body;
-
+async function generatePdf(html) {
+  let browser;
   try {
-    const browser = await puppeteer.launch({
-      headless: true,
+    browser = await puppeteer.launch({
+      headless: true,  // Change to false for debugging
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      dumpio: true,
     });
+    
     const page = await browser.newPage();
+    
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
-
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('error', error => console.error('PAGE ERROR:', error));
     const buffer = await page.pdf({
       format: 'A4',
       printBackground: true,
     });
-    console.log("PDF buffer size:", buffer.length);
-
-    await browser.close();
-
-    res.setHeader("Content-Disposition", 'attachment ; filename="MyResume.pdf"');
-    res.setHeader("Content-Type", "application/pdf");
-    res.send(buffer);
-  } catch (err) {
-    console.error("Error generating PDF:", err.message);
-    res.status(500).send(`An error occurred while generating the PDF: ${err.message}`);
+    return buffer;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
-});
+}
 
-
-// get the resume html in the UI and it's will only for readability
-app.get("api/resume/resume/:id", (req, res) => {
+app.get("/api/resume/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 
@@ -258,15 +167,15 @@ app.get("api/resume/resume/:id", (req, res) => {
       const retrievedData = results[0].candidate_json;
 
       try {
-        const parsedData = JSON.parse(retrievedData);
-        const html = renderResume(parsedData);
-
-        // Serve the HTML directly without generating a PDF
+        // Parse the JSON data from the text column
+        const resumeData = JSON.parse(retrievedData);
+         const resumeHtml = theme.render(resumeData);
+        // Serve the HTML with the theme
         res.setHeader("Content-Type", "text/html");
-        res.send(html);
+        res.send(resumeHtml);
       } catch (parseErr) {
-        console.error("Error parsing JSON:", parseErr);
-        res.status(500).send("An error occurred while parsing JSON data.");
+        console.error("Error processing data:", parseErr);
+        res.status(500).send("An error occurred while processing the data.");
       }
     } else {
       res.json({ message: "Resume not found. Please create a new resume." });
@@ -274,10 +183,9 @@ app.get("api/resume/resume/:id", (req, res) => {
   });
 });
 
+
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
-module.exports = {
-  renderResume,
-};

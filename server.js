@@ -39,10 +39,10 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`Incoming request: ${req.method} ${req.url}`);
+//   next();
+// });
 
 const secretKey =  process.env.SECRET_KEY;
 
@@ -60,7 +60,7 @@ connection.connect((err) => {
     console.error("Error connecting to the database:", err.stack);
     return;
   }
-  console.log("Connected to the database as ID:", connection.threadId);
+ 
 });
 
 function generateGuid() {
@@ -102,7 +102,7 @@ app.post('/api/resume/download-pdf', async (req, res) => {
         return res.status(404).json({ error: 'Candidate not found' });
       }
 
-      console.log('Data updated for candidate_id:', candidateId);
+      // console.log('Data updated for candidate_id:', candidateId);
 
       // Generate PDF from HTML
       generatePdf(html).then(buffer => {
@@ -182,8 +182,6 @@ app.get("/api/resume/:id", (req, res) => {
     }
   });
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

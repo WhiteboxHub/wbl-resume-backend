@@ -22,20 +22,15 @@ app.use(express.static(path.join(__dirname)));
 // Google OAuth2 client setup
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-// const REDIRECT_URI = process.env.REDIRECT_URI ;  
+const REDIRECT_URI = process.env.REDIRECT_URI ;  
 
 
-// const CLIENT_ID = '560359652969-lnlrlq9595dolkdgts6lvgjo2n070394.apps.googleusercontent.com';
-// const CLIENT_SECRET ='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';
-const REDIRECT_URI = 'http://localhost:8002/oauth2callback' ;
+
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 // MySQL database setup
 const dbConfig = {
-//   host: '35.232.56.51',
-//   user: 'whiteboxqa',
-//   password: 'Innovapath1',
-//   database: 'whiteboxqa'
+
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,

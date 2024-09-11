@@ -2,7 +2,6 @@ const express= require("express") ;
 const bodyParser = require("body-parser");
 const path = require("path");
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 const cors = require("cors");
 const crypto = require("crypto");
 const mysql = require("mysql2");
@@ -11,9 +10,6 @@ const jwt = require('jsonwebtoken');
 const { type } = require("os");
 const theme = require('jsonresume-theme-macchiato');
 require("dotenv").config();
-
-
-
 
 const port = 8001;
 // Ensure this line is present
@@ -37,6 +33,8 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+const secretKey =  process.env.SECRET_KEY;
 
 // Create MySQL connection pool
 const pool = mysql.createPool({
@@ -75,7 +73,7 @@ app.use((req, res, next) => {
 });
 
 // Route to handle PDF download
-app.post('/api/resume/download-pdf', (req, res) => {
+app.post('/api/node/download-pdf', (req, res) => {
   const { html, resumeJson } = req.body;
   const candidateId = req.decodedToken?.candidateid;
 
@@ -142,11 +140,11 @@ async function generatePdf(html) {
   }
 }
 
-app.get("/api/resume/:id", (req, res) => {
+app.get("/api/node/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 
-  connection.query(query, [resumeId], (err, results) => {
+  pool.query(query, [resumeId], (err, results) => {
     if (err) {
       console.error("Error retrieving data:", err);
       res.status(500).json({ message: "Error retrieving data", error: err });

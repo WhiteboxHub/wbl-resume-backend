@@ -22,9 +22,7 @@ app.use(express.static(path.join(__dirname)));
 // Google OAuth2 client setup
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI ;  
-
-
+const REDIRECT_URI = process.env.REDIRECT_URI ;
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
@@ -34,7 +32,7 @@ const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE
+  database: process.env.DB_NAME
 
 };
 
@@ -52,13 +50,8 @@ app.use(session({
   saveUninitialized: true,
 }));
 
-
-
-
 const SECRET_KEY = process.env.SECRET_KEY; // Your secret key
 const ALGORITHM = process.env.ALGORITHM; // Algorithm used for signing the token
-
-
 
 async function generateToken(data, expiresInMinutes = 60) {
   const encoder = new TextEncoder();
@@ -75,9 +68,8 @@ async function generateToken(data, expiresInMinutes = 60) {
   return jwt;
 }
 
-
 // Route for sign in with Google
-app.get('/api/resume/signin', (req, res) => {
+app.get('/api/node/signin', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: ['profile', 'email'],
@@ -85,154 +77,156 @@ app.get('/api/resume/signin', (req, res) => {
   });
   res.redirect(url);
 });
+
   
 
 app.get('/oauth2callback', async (req, res) => {
-    const { code } = req.query;
-  
-    if (!code) {
-      // If no code is provided, redirect to the sign-in page
-      return res.redirect('/api/resume/signin');
+  const { code } = req.query;
+
+  if (!code) {
+    // If no code is provided, redirect to the sign-in page
+    return res.redirect('/api/node/signin');
+  }
+
+  try {
+    // Exchange the authorization code for access token
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // Verify the ID token
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const { name: fullname, email: uname } = payload;
+
+    // Fetch user and candidate from the database
+    const [users, candidates] = await Promise.all([
+      queryDb('SELECT * FROM authuser WHERE uname = ?', [uname]),
+      queryDb('SELECT candidateid FROM candidate WHERE email = ?', [uname])
+    ]);
+
+    // If user or candidate not found, redirect to additional info page
+    if (users.length === 0 || candidates.length === 0) {
+      req.session.fullname = fullname;
+      req.session.uname = uname;
+      return res.redirect('/additional-info');
     }
-  
-    try {
-      // Exchange the authorization code for access token
-      const { tokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(tokens);
-  
-      // Verify the ID token
-      const ticket = await oauth2Client.verifyIdToken({
-        idToken: tokens.id_token,
-        audience: CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-  
-      const { name: fullname, email: uname } = payload;
-  
-      // Fetch user and candidate from the database
-      const [users, candidates] = await Promise.all([
-        queryDb('SELECT * FROM authuser WHERE uname = ?', [uname]),
-        queryDb('SELECT candidateid FROM candidate WHERE email = ?', [uname])
-      ]);
-  
-      // If user or candidate not found, redirect to additional info page
-      if (users.length === 0 || candidates.length === 0) {
-        req.session.fullname = fullname;
-        req.session.uname = uname;
-        return res.redirect('/additional-info');
-      }
-  
-      // Check if user's status is 'active'
-      const user = users[0];
-      if (user.status !== 'active') {
-        return res.send(`
-          <html>
-          <head>
-            <style>
-              body {
-                font-family: 'Arial', sans-serif;
-                background-color: #f7f9fc;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-              }
-              .container {
-                background-color: #ffffff;
-                border-radius: 12px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-                padding: 40px;
-                max-width: 400px;
-                text-align: center;
-                border: 1px solid #dfe1e5;
-              }
-              h1 {
-                color: #333;
-                font-size: 24px;
-                font-weight: 600;
-                margin-bottom: 20px;
-              }
-              p {
-                font-size: 16px;
-                color: #555;
-                margin-bottom: 30px;
-              }
-              .contact-btn {
-                background-color: #0056b3;
-                color: #ffffff;
-                padding: 12px 24px;
-                border: none;
-                border-radius: 6px;
-                font-size: 16px;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-              }
-              .contact-btn:hover {
-                background-color: #004494;
-              }
-              .home-btn {
-                background-color: #4CAF50;
-                color: #ffffff;
-                padding: 12px 24px;
-                border: none;
-                border-radius: 6px;
-                font-size: 16px;
-                cursor: pointer;
-                margin-top: 20px;
-                transition: background-color 0.3s ease;
-              }
-              .home-btn:hover {
-                background-color: #45a049;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Account Inactive</h1>
-              <p>Your account is currently inactive. Please contact the recruiting team for further assistance.</p>
-              <p>Please contact Recruiting <br> '+1 925-557-1053'</p>
-              <button class="contact-btn" onclick="window.location.href='mailto:recruiting@whitebox-learning.com'">Contact Recruiting Team</button>
-              <button class="home-btn" onclick="window.location.href='http://localhost:3000/'">Go to Home Page</button>
-            </div>
-          </body>
-          </html>
-        `);
-      }
-  
-      // Increment the login count
-      let updateResult;
-      if (user.logincount === null || user.logincount === undefined) {
-        // Initialize logincount to 1 if it's not set
-        updateResult = await queryDb('UPDATE authuser SET logincount = 0 WHERE uname = ?', [uname]);
-      } else {
-        // Increment logincount if it's already set
-        updateResult = await queryDb('UPDATE authuser SET logincount = logincount + 1 WHERE uname = ?', [uname]);
-      }
-  
-      console.log('Update Result:', updateResult); // Log the result of the update query
-  
-      // Proceed if the status is active
-      req.session.userId = uname;
-  
-      // Extract the candidateid from the query result
-      const candidateid = candidates[0].candidateid;
-  
-      // Generate JWT token with required fields
-      const jwtToken = await generateToken({ sub: uname, candidateid });
-  
-      console.log('Generated JWT Token:', jwtToken); // Ensure JWT token is correctly logged
-  
-      // Redirect to frontend home page with JWT token
-      const redirectUrl = 'http://localhost:3000/';
-      res.redirect(`${redirectUrl}?access_token=${jwtToken}`);
-    } catch (error) {
-      console.error('Error during OAuth2 callback:', error);
-      res.status(500).send('Internal Server Error');
+
+    // Check if user's status is 'active'
+    const user = users[0];
+    if (user.status !== 'active') {
+      return res.send(`
+        <html>
+        <head>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              background-color: #f7f9fc;
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+            }
+            .container {
+              background-color: #ffffff;
+              border-radius: 12px;
+              box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+              padding: 40px;
+              max-width: 400px;
+              text-align: center;
+              border: 1px solid #dfe1e5;
+            }
+            h1 {
+              color: #333;
+              font-size: 24px;
+              font-weight: 600;
+              margin-bottom: 20px;
+            }
+            p {
+              font-size: 16px;
+              color: #555;
+              margin-bottom: 30px;
+            }
+            .contact-btn {
+              background-color: #0056b3;
+              color: #ffffff;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 6px;
+              font-size: 16px;
+              cursor: pointer;
+              transition: background-color 0.3s ease;
+            }
+            .contact-btn:hover {
+              background-color: #004494;
+            }
+            .home-btn {
+              background-color: #4CAF50;
+              color: #ffffff;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 6px;
+              font-size: 16px;
+              cursor: pointer;
+              margin-top: 20px;
+              transition: background-color 0.3s ease;
+            }
+            .home-btn:hover {
+              background-color: #45a049;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Account Inactive</h1>
+            <p>Your account is currently inactive. Please contact the recruiting team for further assistance.</p>
+            <p>Please contact Recruiting <br> '+1 925-557-1053'</p>
+            <button class="contact-btn" onclick="window.location.href='mailto:recruiting@whitebox-learning.com'">Contact Recruiting Team</button>
+            <button class="home-btn" onclick="window.location.href='http://localhost:3000/'">Go to Home Page</button>
+          </div>
+        </body>
+        </html>
+      `);
     }
-  });
-  
+
+    // Increment the login count and update last login time
+    let updateResult;
+    if (user.logincount === null || user.logincount === undefined) {
+      // Initialize logincount to 1 and set lastlogin to now if it's not set
+      updateResult = await queryDb('UPDATE authuser SET logincount = 1, lastlogin = NOW() WHERE uname = ?', [uname]);
+    } else {
+      // Increment logincount and update lastlogin
+      updateResult = await queryDb('UPDATE authuser SET logincount = logincount + 1, lastlogin = NOW() WHERE uname = ?', [uname]);
+    }
+
+    console.log('Update Result:', updateResult); // Log the result of the update query
+
+    // Proceed if the status is active
+    req.session.userId = uname;
+
+    // Extract the candidateid from the query result
+    const candidateid = candidates[0].candidateid;
+
+    // Generate JWT token with required fields
+    const jwtToken = await generateToken({ sub: uname, candidateid });
+
+    console.log('Generated JWT Token:', jwtToken); // Ensure JWT token is correctly logged
+
+    // Redirect to frontend home page with JWT token
+    const redirectUrl = 'http://localhost:3000/';
+    res.redirect(`${redirectUrl}?access_token=${jwtToken}`);
+  } catch (error) {
+    console.error('Error during OAuth2 callback:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
 
 app.get('/api/user-data', async (req, res) => {
   const { jwt_token } = req.query;

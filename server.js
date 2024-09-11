@@ -72,12 +72,12 @@ app.use((req, res, next) => {
 });
 
 // Route to handle PDF download
-app.post('/api/resume/download-pdf', (req, res) => {
+app.post('/api/node/download-pdf', (req, res) => {
   const { html, resumeJson } = req.body;
   const candidateId = req.decodedToken?.candidateid;
 
   if (!candidateId) {
-    return res.status(400).json({ error: 'User not logged in' });
+    return res.status(401).json({ error: 'Please register with a new email to continue' });
   }
 
   const publicId = generateGuid();
@@ -92,7 +92,7 @@ app.post('/api/resume/download-pdf', (req, res) => {
     }
 
     if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Candidate not found' });
+      return res.status(401).json({ error: 'Candidate not found' });
     }
 
     // Generate PDF from HTML
@@ -139,11 +139,11 @@ async function generatePdf(html) {
   }
 }
 
-app.get("/api/resume/:id", (req, res) => {
+app.get("/api/node/:id", (req, res) => {
   const resumeId = req.params.id;
   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 
-  connection.query(query, [resumeId], (err, results) => {
+  pool.query(query, [resumeId], (err, results) => {
     if (err) {
       console.error("Error retrieving data:", err);
       res.status(500).json({ message: "Error retrieving data", error: err });

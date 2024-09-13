@@ -11,25 +11,45 @@ const { type } = require("os");
 const theme = require('jsonresume-theme-macchiato');
 require("dotenv").config();
 
+
+// ######### sairam changes started
+
+const authRoutes = require('./routes/auth1Routes'); // Import leads routes
+const leadsRoutes = require('./routes/leadsRoutes'); // Import leads routes
+
+
+// ########## ended
+
+
+
 const port = 8001;
 // Ensure this line is present
 app.use(express.json()); 
 
-const corsOptions = {
-  origin: [
-    // Adjust these origins based on your frontend 
-    "http://localhost:3000",
-    "https://whitebox-learning.com",
-    "https://www.whitebox-learning.com",
-    // Consider using wildcards if your frontend URL can vary
-    "*.whitebox-learning.com"
-  ],
-  credentials: true, // Allow cookies, authorization headers, etc.
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
-};
+//########### for understanding sairam post calls 
+/**
+ * commented my cors code for sairam frontend calls
+ */
 
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: [
+//     // Adjust these origins based on your frontend 
+//     "http://localhost:3000",
+//     "https://whitebox-learning.com",
+//     "https://www.whitebox-learning.com",
+//     // Consider using wildcards if your frontend URL can vary
+//     "*.whitebox-learning.com"
+//   ],
+//   credentials: true, // Allow cookies, authorization headers, etc.
+//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+//   allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+// };
+
+app.use(cors());
+
+//#####sai
+// app.use(express.json());
+//######
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -52,6 +72,29 @@ pool.getConnection((err, connection) => {
     return;
   }
 })
+
+//##### Sairam leads routes
+//#############################
+// ###########################
+
+// Routes for leads (use the same port and app instance)
+
+app.use((req, res, next) => {
+  req.db =pool;
+  next();
+});
+
+app.use('/api/auth', authRoutes);  
+app.use('/api', leadsRoutes);     
+
+
+
+// ############
+
+
+
+
+
 // Function to generate a GUID
 function generateGuid() {
   return crypto.randomBytes(4).toString('hex').toLowerCase().slice(0, 7);

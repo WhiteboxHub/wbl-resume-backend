@@ -67,7 +67,7 @@ async function generateToken(data, expiresInMinutes = 60) {
 }
 
 // Route for sign in with Google
-app.get('/api/node/signin', (req, res) => {
+app.get('/signin', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: ['profile', 'email'],
@@ -83,7 +83,7 @@ app.get('/oauth2callback', async (req, res) => {
 
   if (!code) {
     // If no code is provided, redirect to the sign-in page
-    return res.redirect('/api/node/signin');
+    return res.redirect('/signin');
   }
 
   try {
@@ -227,7 +227,7 @@ app.get('/oauth2callback', async (req, res) => {
 
 
 
-app.get('/api/user-data', async (req, res) => {
+app.get('/user-data', async (req, res) => {
   const { jwt_token } = req.query;
 
   if (!jwt_token) {

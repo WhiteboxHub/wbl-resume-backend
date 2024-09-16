@@ -1,4 +1,4 @@
-
+// updated 
 
 const express = require('express');
 const path = require('path');
@@ -9,15 +9,23 @@ const jwt = require('jsonwebtoken'); // Import jsonwebtoken
 const { SignJWT,jwtVerify } = require('jose');
 const { TextEncoder } = require('util'); 
 require("dotenv").config();
+const cors = require('cors');
+
 
 const app = express();
-const PORT = 8002;
+const PORT = 8001;
 
 // Middleware to parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from the root directory
 app.use(express.static(path.join(__dirname)));
+
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST'],  // Allow the methods you need
+  credentials: true          // Allow cookies to be sent
+}));
 
 // Google OAuth2 client setup
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -77,8 +85,6 @@ app.get('/api/node/signin', (req, res) => {
   });
   res.redirect(url);
 });
-
-  
 
 app.get('/oauth2callback', async (req, res) => {
   const { code } = req.query;
@@ -187,7 +193,7 @@ app.get('/oauth2callback', async (req, res) => {
             <p>Your account is currently inactive. Please contact the recruiting team for further assistance.</p>
             <p>Please contact Recruiting <br> '+1 925-557-1053'</p>
             <button class="contact-btn" onclick="window.location.href='mailto:recruiting@whitebox-learning.com'">Contact Recruiting Team</button>
-            <button class="home-btn" onclick="window.location.href='http://localhost:3000/'">Go to Home Page</button>
+            <button class="home-btn" onclick="window.location.href='https://whitebox-learning.com/'">Go to Home Page</button>
           </div>
         </body>
         </html>
@@ -218,7 +224,7 @@ app.get('/oauth2callback', async (req, res) => {
     console.log('Generated JWT Token:', jwtToken); // Ensure JWT token is correctly logged
 
     // Redirect to frontend home page with JWT token
-    const redirectUrl = 'http://localhost:3000/';
+    const redirectUrl = 'https://whitebox-learning.com/';
     res.redirect(`${redirectUrl}?access_token=${jwtToken}`);
   } catch (error) {
     console.error('Error during OAuth2 callback:', error);
@@ -326,6 +332,9 @@ app.get('/additional-info', (req, res) => {
   `);
 });
 
+
+
+
 // Route to handle the form submission
 app.post('/submit-info', async (req, res) => {
   const { country, phone, city, zip, address } = req.body;
@@ -345,7 +354,7 @@ app.post('/submit-info', async (req, res) => {
 
 // Route to display the home page after sign in
 app.get('/home', async (req, res) => {
-  const redirectUrl = 'http://localhost:3000/';
+  const redirectUrl = 'https://whitebox-learning.com/';
   if (!req.session.userId) {
     return res.redirect('/');
   }

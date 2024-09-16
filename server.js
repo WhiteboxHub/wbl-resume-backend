@@ -842,7 +842,7 @@ async function generateToken(data, expiresInMinutes = 60) {
       console.log('Generated JWT Token:', jwtToken); // Ensure JWT token is correctly logged
   
       // Redirect to frontend home page with JWT token
-      const redirectUrl = 'https://whitebox-learning.com/';
+      const redirectUrl = 'http://localhost:3000';
       res.redirect(`${redirectUrl}?access_token=${jwtToken}`);
     } catch (error) {
       console.error('Error during OAuth2 callback:', error);
@@ -968,7 +968,7 @@ async function generateToken(data, expiresInMinutes = 60) {
   // Route to display the home page after sign in
   app.get('/home', async (req, res) => {
     // const redirectUrl = 'https://whitebox-learning.com/';
-    const redirectUrl = 'https://whitebox-learning.com/';
+    const redirectUrl = 'http://localhost:3000/';
     if (!req.session.userId) {
       return res.redirect('/');
     }
@@ -1040,6 +1040,52 @@ app.use((req, res, next) => {
   }
 });
 
+// Route to handle PDF download
+// app.post('/api/node/download-pdf', (req, res) => {
+//   const { html, resumeJson } = req.body;
+//   const candidateId = req.decodedToken?.candidateid;
+
+//   if (!candidateId) {
+//     return res.status(401).json({ error: 'Please register with a new email to continue' });
+//   }
+
+//   const publicId = generateGuid();
+//   const query = 'UPDATE candidate_resume SET candidate_json = ?, public_id = ? WHERE candidate_id = ?';
+
+//   pool.getConnection((err, connection) => {
+//     if (err) {
+//       console.error('Error getting connection from pool:', err);
+//       return res.status(500).json({ error: 'Database connection error' });
+//     }
+
+//     connection.query(query, [resumeJson, publicId, candidateId], (error, results) => {
+//       connection.release(); // Release the connection after the query
+//       if (error) {
+//         console.error('Error updating data:', error);
+//         return res.status(500).json({ error: 'Database error' });
+//       }
+
+//       if (results.affectedRows === 0) {
+//         return res.status(401).json({ error: 'Candidate not found' });
+//       }
+
+//       // Generate PDF from HTML
+//       generatePdf(html)
+//         .then(buffer => {
+//           const filename = `resume_${publicId}.pdf`;
+//           res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+//           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+//           res.setHeader('Content-Type', 'application/pdf');
+//           res.end(buffer);
+//         })
+//         .catch(err => {
+//           console.error('Error generating PDF:', err.message);
+//           res.status(500).json({ error: `An error occurred while generating the PDF: ${err.message} `});
+//         });
+//     });
+//   });
+// });
+
 app.post('/api/node/download-pdf', async (req, res) => {
     const { html, resumeJson } = req.body;
     const candidateId = req.decodedToken?.candidateid;
@@ -1076,6 +1122,35 @@ app.post('/api/node/download-pdf', async (req, res) => {
     }
   });
   
+
+// async function generatePdf(html) {
+//   let browser;
+//   try {
+//     browser = await puppeteer.launch({
+//       headless: true, // Change to false for debugging
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+
+//     const page = await browser.newPage();
+//     await page.setContent(html, { waitUntil: 'networkidle0' });
+//     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+//     page.on('error', error => console.error('PAGE ERROR:', error));
+
+//     const buffer = await page.pdf({
+//       format: 'A4',
+//       printBackground: true,
+//     });
+//     return buffer;
+//   } catch (error) {
+//     console.error("Error generating PDF:", error);
+//     throw error;
+//   } finally {
+//     if (browser) {
+//       await browser.close();
+//     }
+//   }
+// }
+
 async function generatePdf(html) {
     let browser;
     try {

@@ -179,10 +179,15 @@ const bodyParser = require("body-parser");
 const puppeteer = require("puppeteer");
 const cors = require("cors");
 const crypto = require("crypto");
-const mysql = require("mysql2");
 const app = express();
 const jwt = require('jsonwebtoken');
 const theme = require('jsonresume-theme-macchiato');
+const path = require('path');
+const mysql = require('mysql2/promise');
+const { OAuth2Client } = require('google-auth-library');
+const session = require('express-session');
+const { SignJWT, jwtVerify } = require('jose');
+const { TextEncoder } = require('util'); 
 require("dotenv").config();
 
 // -----------------------------------------------------------------------sairam's code-------------------
@@ -207,7 +212,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // -----------------------------------------------------------------------
@@ -309,32 +313,35 @@ app.post('/api/node/download-pdf', (req, res) => {
 });
 
 async function generatePdf(html) {
-  let browser;
-  try {
-    browser = await puppeteer.launch({
-      headless: true, // Change to false for debugging
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-    page.on('error', error => console.error('PAGE ERROR:', error));
-
-    const buffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-    });
-    return buffer;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
-  } finally {
-    if (browser) {
-      await browser.close();
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true, // Change to false for debugging
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+  
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+      page.on('error', error => console.error('PAGE ERROR:', error));
+  
+      const buffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+      });
+  
+      console.log('PDF generated successfully'); // Add logging here
+      return buffer;
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      throw error;
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
     }
   }
-}
+  
 
 app.get("/api/node/:id", (req, res) => {
   const resumeId = req.params.id;

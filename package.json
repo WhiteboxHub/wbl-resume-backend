@@ -2,11 +2,11 @@
   "name": "json-resume",
   "version": "1.0.0",
   "description": "Resume Maker to make a professional resumes for the candidates that helps candidates in job search",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:css": "tailwindcss -i ./public/css/styles.css -o ./public/css/output.css --watch",
-    "start": "nodemon parent.js"
+    "start": "nodemon server.js"
   },
   "keywords": [
     "whiteboxlearningResumeMaker",

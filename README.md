@@ -1,9 +1,9 @@
-# json-resume
+# json-live-resume
 
 **Version:** 1.0.0
 
 **Description:**  
-json-resume is a resume maker application that helps candidates create professional resumes to assist them in their job search. The application features an intuitive UI for inputting resume data, generating JSON data from the input, and providing a PDF preview of the resume.
+json-live-resume is a resume maker application that helps candidates create professional resumes to assist them in their job search. The application features an intuitive UI for inputting resume data and showcasing the seamless live resume generation, generating JSON data from the input, and providing the html preview of the resume and resume download feature too
 
 ## Table of Contents
 
@@ -26,8 +26,8 @@ json-resume is a resume maker application that helps candidates create professio
 1. **Clone the repository:**
 
 \`\`\`
-git clone https://github.com/ManisaiReddy/json-resume.git
-cd json-resume
+git clone https://github.com/WhiteboxHub/wbl-resume-backend.git
+cd wbl-resume-backend
 \`\`\`
   
 2. **Install dependencies:**
@@ -50,23 +50,22 @@ npm run build:css
 
 ## Usage
 
-1. Open your browser and navigate to `http://localhost:8081`.
-2. Fill out the resume forms.
-3. Submit the form to preview your resume in HTML.
-4. Generate the PDF of your resume.
+1. Open your browser and navigate to `https://whitebox-learning/resume`
+ (you need to have access to the whitebox-learning portal to see te resume page)
+2. Fill out the resume forms you'll be seeing a live resume
+3. click on Json to get the output json from input data
+4. click on Pdf to download the generated pdf
 
 ## Endpoints
 
-- **GET `http://localhost:8081/`**  
-  Serve the landing page of the application.
+- **GET `https://whitebox-learning.com/resume`**
+  # or
+- **GET `https://www.whitebox-learning.com/resume`**
 
-- **GET `http://localhost:8081/forms`**  
-  Serve the forms page for inputting resume data.
+- **POST `https://whitebox-learning.com/resume/getJson`**  
+  you'll get a generated Json file 
 
-- **POST `http://localhost:8081/submit-form`**  
-  Submit the form data to render the resume in HTML.
-
-- **POST `http://localhost:8081/generate-pdf`**  
+- **POST `https://whitebox-learning.com/resume/download-pdf`**  
   Generate the PDF resume from the HTML content.
 
 ## License
@@ -80,4 +79,3 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 ---
 
 Made with ❤️ by Whitebox-Learning
-no

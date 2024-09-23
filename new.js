@@ -13,7 +13,6 @@ const session = require('express-session');
 const { SignJWT, jwtVerify } = require('jose');
 const { TextEncoder } = require('util'); 
 require("dotenv").config();
-
 const port = 8001;
 app.use(express.json());
 // Middleware to parse URL-encoded bodies (as sent by HTML forms)

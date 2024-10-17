@@ -34,7 +34,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-const secretKey =  process.env.SECRET_KEY;
+// const secretKey =  process.env.SECRET_KEY;
 
 // Create MySQL connection pool
 const pool = mysql.createPool({
@@ -185,10 +185,47 @@ app.get("/api/node/:id", (req, res) => {
 
 //------------------just for testing-----------------------------------
 
+// app.get("/api/node/:id", async (req, res) => {
+//   const resumeId = req.params.id;
+//   const query = "SELECT candidate_json FROM candidate_resume WHERE public_id = ?";
 
-app.get('/home',(req,res)=>{
-  res.send("hello world")
-})
+//   pool.query(query, [resumeId], async (err, results) => {
+//     if (err) {
+//       console.error("Error retrieving data:", err);
+//       res.status(500).json({ message: "Error retrieving data", error: err });
+//       return;
+//     }
+
+//     if (results.length > 0) {
+//       const retrievedData = results[0].candidate_json;
+
+//       try {
+//         // Parse the JSON data from the text column
+//         const resumeData = JSON.parse(retrievedData);
+//         console.log(resumeData);
+//         const resumeHtml = theme.render(resumeData);
+        
+//         // Generate PDF from HTML
+//         const pdfBuffer = await generatePdf(resumeHtml);
+        
+//         // Set headers for PDF download
+//         res.setHeader('Content-Type', 'application/pdf');
+//         res.setHeader('Content-Disposition', `attachment; filename="resume_${resumeId}.pdf"`);
+        
+//         // Send the PDF
+//         res.send(pdfBuffer);
+//       } catch (parseErr) {
+//         console.error("Error processing data:", parseErr);
+//         res.status(500).send("An error occurred while processing the data.");
+//       }
+//     } else {
+//       res.status(404).json({ message: "Resume not found. Please create a new resume." });
+//     }
+//   });
+// });
+// app.get('/home',(req,res)=>{
+//   res.send("hello world")
+// })
 
 // ... (rest of the code remains unchanged)
 

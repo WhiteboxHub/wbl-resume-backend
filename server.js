@@ -83,8 +83,12 @@ app.use((req, res, next) => {
 
 // Route to handle PDF download
 app.post('/api/node/download-pdf', (req, res) => {
+  const token =  req.headers.authorization;
+  // console.log(token);
   const { html, resumeJson } = req.body;
   const candidateId = req.decodedToken?.candidateid;
+  // console.log(candidateId);
+  
 
   if (!candidateId) {
     return res.status(401).json({ error: 'Please register with a new email to continue' });
